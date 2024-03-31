@@ -37,7 +37,7 @@ I've tried making using the program as simple as possible a task as possible, an
 ## Inner Workings
 
 ### The Palette Generator
-The palette generator uses an image, and applies a [k-means clustering](https://en.wikipedia.org/wiki/K-means_clustering) algorithm to all the colors it uses, and iterates through it as many times as the Iteration Count setting, with the Color Count setting defining k. The colors are initiated randomly, and with each iteration, should come approach one region of colors in the image with each iteration.
+The palette generator uses an image, and applies a [k-means clustering](https://en.wikipedia.org/wiki/K-means_clustering) algorithm to all the colors it uses, and iterates through it as many times as the Iteration Count setting, with the Color Count setting defining k. The colors are initiated randomly, and with each iteration, should approach one region of colors in the image with each iteration.
 
 ### The Ditherer
 The ditherer uses an [ordered dithering](https://en.wikipedia.org/wiki/Ordered_dithering) algorithm, that makes use of a Bayer Matrix, the size of which is given by the Matrix Size setting.
