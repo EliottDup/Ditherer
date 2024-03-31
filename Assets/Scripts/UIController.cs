@@ -89,6 +89,7 @@ public class UIController : MonoBehaviour
                 }
                 palette = ditherer.InitPalette(img, colorCount.value, iterationCount.value);
                 WriteError("generated palette for " + loadPath.value);
+                Destroy(img);
             }
             else if (Directory.Exists(loadPath.value))
             {
@@ -107,6 +108,7 @@ public class UIController : MonoBehaviour
                 }
                 palette = ditherer.InitPalette(img, colorCount.value, iterationCount.value);
                 WriteError("generated palette for " + imgPath);
+                Destroy(img);
             }
         }
         else
@@ -218,6 +220,8 @@ public class UIController : MonoBehaviour
         RenderTexture result = ditherer.Dither(img);
 
         savePNG(savePath.value, Path.GetFileName(imgPath), result);
+        result.Release();
+        Destroy(img);
     }
 
     void savePNG(string path, string name, RenderTexture rt)
@@ -243,6 +247,7 @@ public class UIController : MonoBehaviour
         File.WriteAllBytes(filePath, bytes);
 
         Debug.Log("Render texture saved to: " + filePath);
+        Destroy(texture2D);
     }
 
     void WriteError(string msg)

@@ -14,12 +14,12 @@
                     <ui:VisualElement name="auto" style="flex-grow: 1; display: flex; overflow: hidden;">
                         <ui:IntegerField label="color count" value="16" name="colorCount" tooltip="the amount of colors generated" style="width: 90%; align-items: center; align-self: center; -unity-text-align: middle-center;" />
                         <ui:IntegerField label="Iterations" value="16" tooltip="The amount of iteraions used to " name="iterationCount" style="width: 90%; align-items: center; align-self: center; -unity-text-align: middle-center;" />
+                        <ui:IntegerField label="Palette Frame" value="0" name="paletteFrame" style="align-items: center; width: 90%; align-self: center;" />
                     </ui:VisualElement>
                     <ui:VisualElement name="custom" style="flex-grow: 1; display: none; overflow: hidden;">
                         <ui:TextField picking-mode="Ignore" label="Colors" value="#RRGGBB, #RRGGBBAA" tooltip="hexadecimal colors, separated with commas, RGB/RGBA 3-6/4-8 length" name="customColors" style="align-items: center; align-self: center; width: 90%;" />
                     </ui:VisualElement>
                 </ui:VisualElement>
-                <ui:IntegerField label="Palette Frame" value="0" name="paletteFrame" class="input" />
                 <ui:IntegerField label="Matrix Size" value="8" tooltip="this determines the Matrix used by the dithering program, a higher value generates slightly different patterns, this value *must* be a power of 2" name="matrixSize" class="input" />
                 <ui:Button text="Generate palette!" parse-escape-sequences="true" display-tooltip-when-elided="true" name="paletteGeneration" class="input" />
                 <ui:VisualElement name="palettePreview" class="input" style="flex-grow: 1; height: auto; flex-direction: row;">

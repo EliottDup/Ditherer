@@ -13,12 +13,25 @@ public class Ditherer : MonoBehaviour
 {
     [SerializeField]
     ComputeShader shader;
-    RenderTexture result;
+    [SerializeField] RenderTexture result;
     ComputeBuffer matrixBuffer;
     ComputeBuffer paletteBuffer;
+    public Texture2D tmp;
 
     float[,] thresholdMatrix;
     public List<Color> palette;
+
+    struct ImageColor
+    {
+        public Color color;
+        public int frequency;
+
+        public ImageColor(Color color, int frequency)
+        {
+            this.color = color;
+            this.frequency = frequency;
+        }
+    }
 
     public void InitThresholdMatrix(int twoN)
     {
@@ -31,16 +44,23 @@ public class Ditherer : MonoBehaviour
     {
         print("remove duplicate pixels");
         Color[] pixels = image.GetPixels();
-        HashSet<Color> uniqueColors = new HashSet<Color>();
+        Dictionary<Color, int> colorFrequencies = new Dictionary<Color, int>();
+
         foreach (Color pixelColor in pixels)
         {
-            if (!uniqueColors.Contains(pixelColor))
+            if (colorFrequencies.ContainsKey(pixelColor))
             {
-                uniqueColors.Add(pixelColor);
+                colorFrequencies[pixelColor]++;
+                continue;
             }
+            colorFrequencies[pixelColor] = 1;
         }
 
-        List<Color> allColors = new List<Color>(uniqueColors);
+        List<ImageColor> allColors = new List<ImageColor>();
+        foreach (KeyValuePair<Color, int> entry in colorFrequencies)
+        {
+            allColors.Add(new ImageColor(entry.Key, entry.Value));
+        }
 
         print("done removing duplicate pixels");
         print("making palette");
@@ -61,36 +81,38 @@ public class Ditherer : MonoBehaviour
         return palette;
     }
 
-    List<Color> MedianCutColors(List<Color> colors, int n)
-    {
-        if (n == 0)
+    /*
+        List<Color> MedianCutColors(List<Color> colors, int n)
         {
-            Color[] col = { GetAvgColor(colors) };
-            return col.ToList();
-        }
-        (float, float)[] ranges = { (1f, 0f), (1f, 0f), (1f, 0f), (1f, 0f) };
-        foreach (Color c in colors)
-        {
-            for (int i = 0; i < 4; i++)
+            if (n == 0)
             {
-                float v = c[i];
-                ranges[i] = (Mathf.Min(ranges[i].Item1, v), Mathf.Max(ranges[i].Item2, v));
+                Color[] col = { GetAvgColor(colors) };
+                return col.ToList();
             }
+            (float, float)[] ranges = { (1f, 0f), (1f, 0f), (1f, 0f), (1f, 0f) };
+            foreach (Color c in colors)
+            {
+                for (int i = 0; i < 4; i++)
+                {
+                    float v = c[i];
+                    ranges[i] = (Mathf.Min(ranges[i].Item1, v), Mathf.Max(ranges[i].Item2, v));
+                }
+            }
+            float[] totalRanges = { ranges[0].Item2 - ranges[0].Item1, ranges[1].Item2 - ranges[1].Item1, ranges[2].Item2 - ranges[2].Item1, ranges[3].Item2 - ranges[3].Item1 };
+            int dimIndex = totalRanges.ToList().IndexOf(totalRanges.Max());
+
+            List<Color> sortedColors = new List<Color>(colors);
+            sortedColors.Sort((c1, c2) => c1[dimIndex].CompareTo(c2[dimIndex]));
+
+            int midpoint = sortedColors.Count / 2;
+            List<Color> colors1 = sortedColors.Take(midpoint).ToList();
+            List<Color> colors2 = sortedColors.Skip(midpoint).ToList();
+
+            return MedianCutColors(colors1, n - 1).Concat(MedianCutColors(colors2, n - 1)).ToList();
         }
-        float[] totalRanges = { ranges[0].Item2 - ranges[0].Item1, ranges[1].Item2 - ranges[1].Item1, ranges[2].Item2 - ranges[2].Item1, ranges[3].Item2 - ranges[3].Item1 };
-        int dimIndex = totalRanges.ToList().IndexOf(totalRanges.Max());
+    */
 
-        List<Color> sortedColors = new List<Color>(colors);
-        sortedColors.Sort((c1, c2) => c1[dimIndex].CompareTo(c2[dimIndex]));
-
-        int midpoint = sortedColors.Count / 2;
-        List<Color> colors1 = sortedColors.Take(midpoint).ToList();
-        List<Color> colors2 = sortedColors.Skip(midpoint).ToList();
-
-        return MedianCutColors(colors1, n - 1).Concat(MedianCutColors(colors2, n - 1)).ToList();
-    }
-
-    List<Color> GenerateKMeansPalette(List<Color> colors, int k, int iterationCount)
+    List<Color> GenerateKMeansPalette(List<ImageColor> colors, int k, int iterationCount)
     {
         List<Vector3> means = new List<Vector3>();
         List<List<int>> closestIds = new List<List<int>>();
@@ -102,7 +124,7 @@ public class Ditherer : MonoBehaviour
 
         for (int i = 0; i < colors.Count; i++)
         {
-            int id = getClosestID(colors[i], means);
+            int id = getClosestID(colors[i].color, means);
             closestIds[id].Add(i);
         }
 
@@ -111,7 +133,7 @@ public class Ditherer : MonoBehaviour
             List<Vector3> newMeans = new List<Vector3>();
             for (int j = 0; j < k; j++)
             {
-                List<Color> closeCols = closestIds[j].Select(c => colors[c]).ToList();
+                List<ImageColor> closeCols = closestIds[j].Select(c => colors[c]).ToList();
                 if (closeCols.Count == 0)
                 {
                     means[j] = new Vector3(Random.value, Random.value, Random.value);
@@ -126,7 +148,7 @@ public class Ditherer : MonoBehaviour
             // means = new List<Vector3>(newMeans);
             for (int c = 0; c < colors.Count; c++)
             {
-                int id = getClosestID(colors[c], means);
+                int id = getClosestID(colors[c].color, means);
                 closestIds[id].Add(c);
             }
         }
@@ -156,14 +178,16 @@ public class Ditherer : MonoBehaviour
         return smallestID;
     }
 
-    Color GetAvgColor(List<Color> colors)
+    Color GetAvgColor(List<ImageColor> colors)
     {
         Color avg = new Color(0, 0, 0, 0);
-        foreach (Color c in colors)
+        int tot = 0;
+        foreach (ImageColor c in colors)
         {
-            avg += c;
+            avg += c.color * c.frequency;
+            tot += c.frequency;
         }
-        return avg / colors.Count;
+        return avg / tot;
     }
 
     float[,] MakeThresholdMatrix(float twoN)
@@ -312,14 +336,23 @@ public class Ditherer : MonoBehaviour
     {
         if (palette == null)
         {
-            InitPalette(image, 2, 16);
+            palette = new List<Color>();
+            palette.Add(Color.black);
+            palette.Add(Color.white);
         }
-
-        result = new RenderTexture(image.width, image.height, 24);  //create Result and blit intput to it
-        result.enableRandomWrite = true;
-        result.Create();
+        if (result == null || result.height != image.height || result.width != image.width)
+        {
+            if (result == null)
+            {
+                result = new RenderTexture(image.width, image.height, 24);  //create Result and blit intput to it
+                print("ReBuilding Rentertexture");
+            }
+            result.enableRandomWrite = true;
+            result.Create();
+            shader.SetTexture(0, "result", result);
+        }
+        RenderTexture.active = result;
         Graphics.Blit(image, result);
-        shader.SetTexture(0, "result", result);
 
 
         shader.SetInt("width", image.width);
@@ -333,5 +366,14 @@ public class Ditherer : MonoBehaviour
     {
         matrixBuffer?.Dispose();
         paletteBuffer?.Dispose();
+        if (result != null)
+        {
+            result.Release();
+        }
+    }
+
+    public void OnDisable()
+    {
+        DisposeBuffers();
     }
 }
