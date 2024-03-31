@@ -40,3 +40,46 @@ I've tried making using the program as simple as possible a task as possible, an
 The palette generator uses an image, and applies a [k-means clustering](https://en.wikipedia.org/wiki/K-means_clustering) algorithm to all the colors it uses, and iterates through it as many times as the Iteration Count setting, with the Color Count setting defining k. The colors are initiated randomly, and with each iteration, should come approach one region of colors in the image with each iteration.
 
 ### The Ditherer
+The ditherer uses an [ordered dithering](https://en.wikipedia.org/wiki/Ordered_dithering) algorithm, that makes use of a Bayer Matrix, the size of which is given by the Matrix Size setting.
+Here are the Matrices for sizes 1, 2, 4 and 8
+
+```math
+\mathbf{M_0} = \frac{1}{1} \times
+\begin{bmatrix}
+0
+\end{bmatrix}
+```
+
+```math
+\mathbf{M_2} = \frac{1}{4} \times
+\begin{bmatrix}
+0 & 2 \\
+3 & 1
+\end{bmatrix}
+```
+
+```math
+\mathbf{M_4} = \frac{1}{16} \times
+\begin{bmatrix}
+ 0 &  8 &  2 & 10 \\
+12 &  4 & 14 &  6 \\
+ 3 & 11 &  1 &  9 \\
+15 &  7 & 13 &  5
+\end{bmatrix}
+```
+
+```math
+\mathbf{M+8} = \frac{1}{64} \times
+\begin{bmatrix}
+ 0 & 32 &  8 & 40 &  2 & 34 & 10 & 42 \\
+48 & 16 & 56 & 24 & 50 & 18 & 58 & 26 \\
+12 & 44 &  4 & 36 & 14 & 46 &  6 & 38 \\
+60 & 28 & 52 & 20 & 62 & 30 & 54 & 22 \\
+ 3 & 35 & 11 & 43 &  1 & 33 &  9 & 41 \\
+51 & 19 & 59 & 27 & 49 & 17 & 57 & 25 \\
+15 & 47 &  7 & 39 & 13 & 45 &  5 & 37 \\
+63 & 31 & 55 & 23 & 61 & 29 & 53 & 21
+\end{bmatrix}
+```
+
+This matrix is overlayed onto the image, every pixel's color is the "rounded" to the nearest color in the palette.
