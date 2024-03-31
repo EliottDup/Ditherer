@@ -1,0 +1,13 @@
+.input {
+    font-size: 20px;
+    align-items: stretch;
+    align-self: center;
+    width: 100%;
+    -unity-text-align: middle-center;
+}
+
+.previewColor {
+    flex-grow: 1;
+    display: flex;
+    visibility: visible;
+}

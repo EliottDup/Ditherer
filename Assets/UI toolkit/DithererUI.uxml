@@ -1,0 +1,33 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI%20toolkit/style.uss?fileID=7433441132597879392&amp;guid=9c839cd68b8d5ec448aa1c0e8c439d9b&amp;type=3#style" />
+    <ui:VisualElement name="background" focusable="true" style="flex-grow: 1; background-color: rgb(173, 116, 63);">
+        <ui:Label tabindex="-1" text="DITHER THIS DITHER THAT" parse-escape-sequences="true" display-tooltip-when-elided="true" name="Title" style="-unity-text-align: upper-center; font-size: 36px;" />
+        <ui:VisualElement name="Body" style="flex-grow: 1; padding-bottom: 2%; flex-direction: row;">
+            <ui:ScrollView style="flex-shrink: 0; width: 25%;">
+                <ui:Label tabindex="-1" text="Welcome to c0der23&apos;s ultimate ditherer(tm)&#10;&#10;&lt;b&gt;&lt;i&gt;Quick Tutorial:&lt;/i&gt;&lt;/b&gt;&#10;&#10;1. Enter path of file/folder you want to dither&#10;&#10;2. edit palette settings to liking&#10;&#10;3. generate palette&#10;&#10;4. run ditherer&#10;&#10;&lt;b&gt;&lt;i&gt;Keep In Mind:&lt;/i&gt;&lt;/b&gt;&#10;&#10;The application might freeze when doing batch operations or generating palettes for large images, you can track its batch progress by checking the output folder.&#10;&#10;When given a folder, the automatic palette generator will use the &quot;n&quot;th image found, where n is the Palettte Generation Frame setting, entering zero gives the first frame, if the frame count is exeeded or the value is negative, It will be set to zero.&#10;&#10;The dithering matrix value gives the size of the matrix used to dither the images, where 1 means no dithering and 2 means very minimal dithering. I highly advise you to play around with it until you find a value that gives good results.&#10;&#10;The wikipedia page for &quot;ordered dithering&quot; has a more detailed explanation about the dithering matrix and the algorithm used in this program.&#10;&#10;The dithering matrix &lt;b&gt;MUST&lt;/b&gt; be a power of 2, otherwise it will not work." parse-escape-sequences="true" display-tooltip-when-elided="true" style="white-space: normal;" />
+            </ui:ScrollView>
+            <ui:VisualElement style="flex-grow: 0; width: 50%;">
+                <ui:TextField picking-mode="Ignore" label="Load Path" value="..." name="loadPath" tooltip="path to the folder/image you want to dither" class="input" />
+                <ui:TextField label="Save Path" value="..." name="savePath" password="false" tooltip="path to the folder the result will be saved to" class="input" />
+                <ui:DropdownField label="Palette Type" index="0" choices="auto, custom" name="paletteType" tooltip="The type of palette" class="input" style="font-size: 20px; -unity-text-align: middle-center;" />
+                <ui:VisualElement name="paletteSettings" class="input">
+                    <ui:VisualElement name="auto" style="flex-grow: 1; display: flex; overflow: hidden;">
+                        <ui:IntegerField label="color count" value="16" name="colorCount" tooltip="the amount of colors generated" style="width: 90%; align-items: center; align-self: center; -unity-text-align: middle-center;" />
+                        <ui:IntegerField label="Iterations" value="16" tooltip="The amount of iteraions used to " name="iterationCount" style="width: 90%; align-items: center; align-self: center; -unity-text-align: middle-center;" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="custom" style="flex-grow: 1; display: none; overflow: hidden;">
+                        <ui:TextField picking-mode="Ignore" label="Colors" value="#RRGGBB, #RRGGBBAA" tooltip="hexadecimal colors, separated with commas, RGB/RGBA 3-6/4-8 length" name="customColors" style="align-items: center; align-self: center; width: 90%;" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:IntegerField label="Palette Frame" value="0" name="paletteFrame" class="input" />
+                <ui:IntegerField label="Matrix Size" value="8" tooltip="this determines the Matrix used by the dithering program, a higher value generates slightly different patterns, this value *must* be a power of 2" name="matrixSize" class="input" />
+                <ui:Button text="Generate palette!" parse-escape-sequences="true" display-tooltip-when-elided="true" name="paletteGeneration" class="input" />
+                <ui:VisualElement name="palettePreview" class="input" style="flex-grow: 1; height: auto; flex-direction: row;">
+                    <ui:VisualElement class="previewColor" style="flex-grow: 1;" />
+                </ui:VisualElement>
+                <ui:Button text="Run Ditherer!" parse-escape-sequences="true" display-tooltip-when-elided="true" name="runButton" class="input" />
+            </ui:VisualElement>
+            <ui:Label tabindex="-1" parse-escape-sequences="true" display-tooltip-when-elided="true" name="errorOutput" style="position: relative; left: auto; top: auto; width: 25%; height: auto; font-size: 20px; white-space: normal; flex-grow: 0; flex-shrink: 0; padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0;" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

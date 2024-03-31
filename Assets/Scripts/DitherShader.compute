@@ -1,0 +1,52 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel Dither
+
+int width;
+int height;
+
+int thresholdMatrixSize;
+StructuredBuffer<float> tMatrix;
+
+int paletteSize;
+StructuredBuffer<float4> palette;
+
+float GetMatrixValue(uint2 pos){
+    return (tMatrix[(pos.x % thresholdMatrixSize) + (pos.y % thresholdMatrixSize) * thresholdMatrixSize]);
+}
+
+Texture2D<float4> input;
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture2D<float4> result;
+
+float4 FindClosestColor(float4 color){
+    return round(round(color * 8)) / 8;
+}
+
+float4 FindClosestPaletteColor(float4 color){
+    float smallest = 9999.0;
+    int smallestIndex = 0;
+
+    for (int i = 0; i < paletteSize; i++){
+        float4 curPaletteCol = palette[i];
+        float4 sqThing = (color - curPaletteCol) * (color - curPaletteCol);
+        float dist = sqThing.x + sqThing.y + sqThing.z + sqThing.w;
+        if ( dist < smallest){
+            smallest = dist;
+            smallestIndex = i;
+        }
+    }
+
+    return palette[smallestIndex];
+}
+
+[numthreads(8,8,1)]
+void Dither (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x > width || id.y > height || paletteSize == 0){
+        return;
+    }
+
+    result[id.xy] = FindClosestPaletteColor(result[id.xy] + (GetMatrixValue(id.xy) / paletteSize));
+}
