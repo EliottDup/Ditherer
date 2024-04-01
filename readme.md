@@ -69,7 +69,7 @@ Here are the Matrices for sizes 1, 2, 4 and 8
 ```
 
 ```math
-\mathbf{M+8} = \frac{1}{64} \times
+\mathbf{M_8} = \frac{1}{64} \times
 \begin{bmatrix}
  0 & 32 &  8 & 40 &  2 & 34 & 10 & 42 \\
 48 & 16 & 56 & 24 & 50 & 18 & 58 & 26 \\
