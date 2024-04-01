@@ -48,5 +48,5 @@ void Dither (uint3 id : SV_DispatchThreadID)
         return;
     }
 
-    result[id.xy] = FindClosestPaletteColor(result[id.xy] + (GetMatrixValue(id.xy) / paletteSize));
+    result[id.xy] = FindClosestPaletteColor(result[id.xy] + (GetMatrixValue(id.xy) * 1.75 / paletteSize));
 }

@@ -340,17 +340,15 @@ public class Ditherer : MonoBehaviour
             palette.Add(Color.black);
             palette.Add(Color.white);
         }
-        if (result == null || result.height != image.height || result.width != image.width)
+        if (result != null)
         {
-            if (result == null)
-            {
-                result = new RenderTexture(image.width, image.height, 24);  //create Result and blit intput to it
-                print("ReBuilding Rentertexture");
-            }
-            result.enableRandomWrite = true;
-            result.Create();
-            shader.SetTexture(0, "result", result);
+            result.Release();
         }
+        result = new RenderTexture(image.width, image.height, 24);  //create Result and blit intput to it
+        print("ReBuilding Rentertexture");
+        result.enableRandomWrite = true;
+        result.Create();
+        shader.SetTexture(0, "result", result);
         RenderTexture.active = result;
         Graphics.Blit(image, result);
 
