@@ -8,6 +8,7 @@ using UnityEngine.UI;
 using UnityEngine.UIElements;
 using System.IO;
 using Random = UnityEngine.Random;
+using UnityEngine.Rendering;
 
 public class Ditherer : MonoBehaviour
 {
@@ -38,6 +39,236 @@ public class Ditherer : MonoBehaviour
         float[,] m = MakeThresholdMatrix(twoN);
         thresholdMatrix = AddMatrix(m, -0.5f);
         printMatrix(thresholdMatrix);
+    }
+
+    struct VoidAndCluster
+    {
+        public Vector2Int voidPos;
+        public Vector2Int clusterPos;
+        public VoidAndCluster(Vector2Int voidPos, Vector2Int clusterPos)
+        {
+            this.voidPos = voidPos;
+            this.clusterPos = clusterPos;
+        }
+
+    }
+
+    bool[,] DeepCopy(bool[,] original)
+    {
+        int rows = original.GetLength(0);
+        int cols = original.GetLength(1);
+
+        // Create a new array with the same dimensions as the original
+        bool[,] copy = new bool[rows, cols];
+
+        // Iterate through each element of the original array
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < cols; j++)
+            {
+                // Copy the value of each element to the corresponding position in the new array
+                copy[i, j] = original[i, j];
+            }
+        }
+
+        return copy;
+    }
+
+    public void InitBlueNoise(int size, float fill, float sigma)
+    {
+        int MN = size * size;
+
+        bool[,] initialBinaryMatrix = fillBoolMatrix(size, fill);
+        initialBinaryMatrix = dispersebinaryMatrix(initialBinaryMatrix, sigma);
+
+        float[,] ditherArray = new float[size, size];
+
+        bool[,] BinaryPattern = new bool[size, size]; //Init Phase 1
+        float[,] tmp = new float[size, size];
+        int ones = 0;
+        for (int i = 0; i < initialBinaryMatrix.GetLength(0); i++)
+        {
+            for (int j = 0; j < initialBinaryMatrix.GetLength(1); j++)
+            {
+                if (initialBinaryMatrix[i, j])
+                {
+                    ones++;
+                    BinaryPattern[i, j] = true;
+                    tmp[i, j] = 1f;
+                }
+            }
+        }
+
+        thresholdMatrix = tmp;
+        return;
+
+        int rank = ones - 1;
+        print(ones);
+        print("s1");
+        while (rank >= 0)                                                         //Phase 1 //todo: one of these stages (or more) is breaki
+        {
+            VoidAndCluster VaC = FindVoidAndCluster(BinaryPattern, sigma);
+            BinaryPattern[VaC.clusterPos.x, VaC.clusterPos.y] = false;
+            ditherArray[VaC.clusterPos.x, VaC.clusterPos.y] = ((float)rank / (float)MN);
+            rank--;
+        }
+
+        print("s2");
+        BinaryPattern = DeepCopy(initialBinaryMatrix); //Init Phase 2
+        rank = ones;
+        while (rank < (MN / 2))
+        {                                                        //Phase 2
+            VoidAndCluster VaC = FindVoidAndCluster(BinaryPattern, sigma);
+            BinaryPattern[VaC.voidPos.x, VaC.voidPos.y] = true;
+            ditherArray[VaC.voidPos.x, VaC.voidPos.y] = ((float)rank / (float)MN);
+            rank++;
+
+        }
+
+        print("s3");
+        while (rank < MN)       //phase 3
+        {
+            VoidAndCluster VaC = FindVoidAndCluster(BinaryPattern, sigma, true);
+            BinaryPattern[VaC.clusterPos.x, VaC.clusterPos.y] = true;
+            ditherArray[VaC.clusterPos.x, VaC.clusterPos.y] = ((float)rank / (float)MN);
+            rank++;
+        }
+
+        thresholdMatrix = ditherArray;
+        printMatrix(ditherArray);
+
+        return;
+    }
+
+    bool[,] dispersebinaryMatrix(bool[,] binaryMatrix, float sigma)
+    {
+        Vector2Int lastCluster = new Vector2Int(-1, -1);
+        while (true)
+        {
+            VoidAndCluster VaC = FindVoidAndCluster(binaryMatrix, sigma);
+            Vector2Int cp = VaC.clusterPos;
+            Vector2Int vp = VaC.voidPos;
+
+            if (vp == lastCluster)
+            {
+                return binaryMatrix;
+
+            }
+
+            binaryMatrix[cp.x, cp.y] = false;
+            binaryMatrix[vp.x, vp.y] = true;
+            lastCluster = cp;
+        }
+
+
+        bool stable = false;
+        while (!stable)
+        {
+            VoidAndCluster VaC = FindVoidAndCluster(binaryMatrix, sigma);
+            Vector2Int cp = VaC.clusterPos;
+            Vector2Int vp = VaC.voidPos;
+            print("cluster" + cp.ToString());
+            print("void" + VaC.voidPos.ToString());
+            if (lastCluster.x != -1 && vp == lastCluster)
+            {
+                binaryMatrix[vp.x, vp.y] = true;
+                print(lastCluster);
+                print(cp);
+                printMatrix(binaryMatrix);
+                stable = true;
+            }
+            lastCluster = cp;
+            binaryMatrix[cp.x, cp.y] = false;
+
+            binaryMatrix[vp.x, vp.y] = true;
+            printMatrix(binaryMatrix);
+        }
+        return binaryMatrix;
+    }
+
+    bool[,] fillBoolMatrix(int size, float fill)
+    {
+        bool[,] binMat = new bool[size, size];
+        for (int i = 0; i < size; i++)
+        {
+            for (int j = 0; j < size; j++)
+            {
+                binMat[i, j] = true;
+                if ((i * size + (j + 1)) >= (size * size) * fill)
+                {
+                    return binMat;
+                }
+            }
+        }
+        return binMat;
+    }
+
+    float WraparoundDistanceSquared(Vector2 v1, Vector2 v2, float size)
+    {
+        float xDiff = Mathf.Abs(v1.x - v2.x);
+        if (xDiff > size / 2)
+        {
+            xDiff = size - xDiff;
+        }
+
+        float yDiff = Mathf.Abs(v1.y - v2.y);
+        if (yDiff > size / 2)
+        {
+            yDiff = size - yDiff;
+        }
+        return xDiff * xDiff + yDiff * yDiff;
+    }
+
+    VoidAndCluster FindVoidAndCluster(bool[,] binPat, float sigma, bool invert = false)
+    {
+        int size = binPat.GetLength(0);
+        float[,] energyMatrix = new float[size, size];
+        for (int x = 0; x < size; x++)
+        {
+            for (int y = 0; y < size; y++)
+            {
+                Vector2 v1 = new Vector2(x, y);
+                for (int i = 0; i < size; i++)
+                {
+                    for (int j = 0; j < size; j++)
+                    {
+                        Vector2 v2 = new Vector2(i, j);
+                        if ((binPat[i, j] ^ invert) && v1 != v2)
+                        {
+                            float energy = 1 / (WraparoundDistanceSquared(v1, v2, size) / (2 * sigma * sigma) + 1);
+                            energyMatrix[x, y] += energy;
+                        }
+                    }
+                }
+            }
+        }
+
+        float lowestE = float.PositiveInfinity;
+        Vector2Int voidPos = new Vector2Int();
+
+        float highestE = float.NegativeInfinity;
+        Vector2Int clusterPos = new Vector2Int();
+
+        for (int x = 0; x < size; x++)
+        {
+            for (int y = 0; y < size; y++)
+            {
+                if (energyMatrix[x, y] < lowestE && !(binPat[x, y] ^ invert))
+                {
+                    lowestE = energyMatrix[x, y];
+
+                    voidPos = new Vector2Int(x, y);
+                }
+
+                if (energyMatrix[x, y] > highestE && (binPat[x, y] ^ invert))
+                {
+                    highestE = energyMatrix[x, y];
+
+                    clusterPos = new Vector2Int(x, y);
+                }
+            }
+        }
+        return new VoidAndCluster(voidPos, clusterPos);
     }
 
     public List<Color> InitPalette(Texture2D image, int colorCount, int iterationCount)
@@ -205,7 +436,7 @@ public class Ditherer : MonoBehaviour
         return MultiplyMatrix(arr, 1 / (twoN * twoN));
     }
 
-    void printMatrix(float[,] m)
+    void printMatrix<T>(T[,] m)
     {
         string str = "";
         for (int i = 0; i < m.GetLength(0); i++)

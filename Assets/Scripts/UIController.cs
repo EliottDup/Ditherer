@@ -12,12 +12,14 @@ public class UIController : MonoBehaviour
     public Ditherer ditherer;
 
 
-    VisualElement root, autoPaletteSettings, customPaletteSettings, palettePreview;
-    DropdownField paletteType;
+    VisualElement root, autoPaletteSettings, customPaletteSettings, bayerSettings, BlueNoiseSettings, palettePreview;
+    DropdownField paletteType, ditherType;
     TextField loadPath, savePath, customColors;
     IntegerField colorCount, iterationCount, matrixSize, paletteFrame;
     Button genPaletteButton, runButton;
     Label errorOutput;
+
+    delegate void MatrixFunction(int size);
 
     void OnEnable()
     {
@@ -39,15 +41,26 @@ public class UIController : MonoBehaviour
         customColors = root.Q<TextField>("customColors");
         paletteFrame = root.Q<IntegerField>("paletteFrame");
 
+        ditherType = root.Q<DropdownField>("ditherType");
+
+        bayerSettings = root.Q<VisualElement>("bayerSettings");
         matrixSize = root.Q<IntegerField>("matrixSize");
+
+        BlueNoiseSettings = root.Q<VisualElement>("blueNoiseSettings");
 
         genPaletteButton = root.Q<Button>("paletteGeneration");
         palettePreview = root.Q<VisualElement>("palettePreview");
 
         runButton = root.Q<Button>("runButton");
 
+
+
         paletteType.RegisterValueChangedCallback(evt => PaletteTypeValueChanged(evt.newValue));
+
+        ditherType.RegisterValueChangedCallback(evt => DitherTypeValueChanged(evt.newValue));
+
         genPaletteButton.clicked += GeneratePalette;
+
 
         runButton.clicked += () => StartCoroutine(RunDitherer());
 
@@ -70,6 +83,17 @@ public class UIController : MonoBehaviour
         }
         autoPaletteSettings.style.display = DisplayStyle.Flex;
         customPaletteSettings.style.display = DisplayStyle.None;
+        return;
+    }
+
+    void DitherTypeValueChanged(string selectedValue)
+    {
+        if (selectedValue != "bayer")
+        {
+            matrixSize.label = "Texture Size";
+            return;
+        }
+        matrixSize.label = "Matrix Size";
         return;
     }
 
@@ -158,13 +182,23 @@ public class UIController : MonoBehaviour
             WriteError("Error: save folder not found");
         }
 
-        if (!IsPowerOfTwo(matrixSize.value))
+        if (!IsPowerOfTwo(matrixSize.value) && ditherType.value == "bayer")
         {
             WriteError("matrixSize is not a power of two");
             yield break;
-
         }
-        ditherer.InitThresholdMatrix(matrixSize.value);
+
+        if (ditherType.value == "bayer")
+        {
+            ditherer.InitThresholdMatrix(matrixSize.value);
+        }
+        else
+        {
+            print("starting blue noise gen");
+            ditherer.InitBlueNoise(matrixSize.value, 0.1f, 1.9f);
+            print("blue noise generated");
+        }
+
         ditherer.InitBuffers();
 
         if (File.Exists(loadPath.value))
