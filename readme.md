@@ -10,7 +10,7 @@ I've tried making using the program as simple as possible a task as possible, an
    If it is a folder, every image in this folder will be dithered.
 
    The save Path is the folder where the dithered images are stored.
-   **IF THE SAVE FOLDER IS THE SAME FOLDER AS THE FILE LOCATION, THE FILL WILL BE OVERWRITTEN**
+   **IF THE SAVE FOLDER IS THE SAME FOLDER AS THE FILE LOCATION, THE FILE WILL BE OVERWRITTEN**
 
 2. Choose what type of Color palette you want to use:
    - auto: This setting will generate a number of colors based on an image, if the Save Path points to a single file, this image will be used, if it points to a folder, it will use the Palette Frame setting to determine which image to generate a palette from. Setting this setting to 0 uses the first image found.
