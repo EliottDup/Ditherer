@@ -40,7 +40,7 @@ public class Ditherer : MonoBehaviour
         printMatrix(thresholdMatrix);
     }
 
-    public List<Color> InitPalette(Texture2D image, int colorCount, int iterationCount)
+    public List<Color> InitPalette(Texture2D image, int colorCount, int iterationCount, int seed)
     {
         print("remove duplicate pixels");
         Color[] pixels = image.GetPixels();
@@ -62,10 +62,7 @@ public class Ditherer : MonoBehaviour
             allColors.Add(new ImageColor(entry.Key, entry.Value));
         }
 
-        print("done removing duplicate pixels");
-        print("making palette");
-
-        List<Color> tmpPaletteColors = GenerateKMeansPalette(allColors, colorCount, iterationCount);
+        List<Color> tmpPaletteColors = GenerateKMeansPalette(allColors, colorCount, iterationCount, seed);
         List<Color> paletteColors = new List<Color>();
         for (int i = 0; i < tmpPaletteColors.Count; i++)
         {
@@ -75,7 +72,6 @@ public class Ditherer : MonoBehaviour
             }
         }
         print(paletteColors.Count);
-        print("palette made");
 
         palette = paletteColors;
         return palette;
@@ -112,10 +108,11 @@ public class Ditherer : MonoBehaviour
         }
     */
 
-    List<Color> GenerateKMeansPalette(List<ImageColor> colors, int k, int iterationCount)
+    List<Color> GenerateKMeansPalette(List<ImageColor> colors, int k, int iterationCount, int seed)
     {
         List<Vector3> means = new List<Vector3>();
         List<List<int>> closestIds = new List<List<int>>();
+        Random.InitState(seed);
         for (int i = 0; i < k; i++)
         {
             closestIds.Add(new List<int>());
@@ -332,7 +329,7 @@ public class Ditherer : MonoBehaviour
         shader.SetBuffer(0, "palette", paletteBuffer);
     }
 
-    public RenderTexture Dither(Texture2D image)
+    public RenderTexture Dither(Texture2D image, float scalefactor)
     {
         if (palette == null)
         {
@@ -344,7 +341,11 @@ public class Ditherer : MonoBehaviour
         {
             result.Release();
         }
-        result = new RenderTexture(image.width, image.height, 24);  //create Result and blit intput to it
+
+
+        int width = (int)(image.width * scalefactor);
+        int height = (int)(image.height * scalefactor);
+        result = new RenderTexture(width, height, 24);  //create Result and blit intput to it
         print("ReBuilding Rentertexture");
         result.enableRandomWrite = true;
         result.Create();
@@ -353,10 +354,10 @@ public class Ditherer : MonoBehaviour
         Graphics.Blit(image, result);
 
 
-        shader.SetInt("width", image.width);
-        shader.SetInt("height", image.height);
+        shader.SetInt("width", width);
+        shader.SetInt("height", height);
 
-        shader.Dispatch(0, (int)MathF.Ceiling(image.width / 8f), (int)MathF.Ceiling(image.height / 8f), 1);
+        shader.Dispatch(0, (int)MathF.Ceiling(width / 8f), (int)MathF.Ceiling(height / 8f), 1);
         return result;
     }
 

@@ -12,11 +12,12 @@ public class UIController : MonoBehaviour
     public Ditherer ditherer;
 
 
-    VisualElement root, autoPaletteSettings, customPaletteSettings, palettePreview;
-    DropdownField paletteType;
+    VisualElement root, autoPaletteSettings, customPaletteSettings, palettePreview, bayerDitherSettings;
+    DropdownField paletteType, dithererType;
     TextField loadPath, savePath, customColors;
-    IntegerField colorCount, iterationCount, matrixSize, paletteFrame;
+    IntegerField colorCount, iterationCount, matrixSize, paletteFrame, seed;
     Button genPaletteButton, runButton;
+    UnsignedIntegerField outputScale;
     Label errorOutput;
 
     void OnEnable()
@@ -34,20 +35,31 @@ public class UIController : MonoBehaviour
         autoPaletteSettings = root.Q<VisualElement>("auto");
         colorCount = root.Q<IntegerField>("colorCount");
         iterationCount = root.Q<IntegerField>("iterationCount");
+        seed = root.Q<IntegerField>("seed");
 
         customPaletteSettings = root.Q<VisualElement>("custom");
         customColors = root.Q<TextField>("customColors");
+
         paletteFrame = root.Q<IntegerField>("paletteFrame");
 
-        matrixSize = root.Q<IntegerField>("matrixSize");
 
         genPaletteButton = root.Q<Button>("paletteGeneration");
         palettePreview = root.Q<VisualElement>("palettePreview");
+
+        dithererType = root.Q<DropdownField>("dithererType");
+
+        bayerDitherSettings = root.Q<VisualElement>("bayer");
+        matrixSize = root.Q<IntegerField>("matrixSize");
+
+        outputScale = root.Q<UnsignedIntegerField>("outputScale");
 
         runButton = root.Q<Button>("runButton");
 
         paletteType.RegisterValueChangedCallback(evt => PaletteTypeValueChanged(evt.newValue));
         genPaletteButton.clicked += GeneratePalette;
+
+        dithererType.RegisterValueChangedCallback(evt => DithererTypeValueChanged(evt.newValue));
+
 
         runButton.clicked += () => StartCoroutine(RunDitherer());
 
@@ -58,6 +70,16 @@ public class UIController : MonoBehaviour
         }
 
         errorOutput = root.Q<Label>("errorOutput");
+    }
+
+    void DithererTypeValueChanged(string newValue)
+    {
+        if (newValue != "None")
+        {
+            bayerDitherSettings.style.display = DisplayStyle.Flex;
+            return;
+        }
+        bayerDitherSettings.style.display = DisplayStyle.None;
     }
 
     void PaletteTypeValueChanged(string selectedValue)
@@ -71,6 +93,11 @@ public class UIController : MonoBehaviour
         autoPaletteSettings.style.display = DisplayStyle.Flex;
         customPaletteSettings.style.display = DisplayStyle.None;
         return;
+    }
+
+    int getMatrixSize()
+    {
+        return (dithererType.value == "Bayer") ? matrixSize.value : 1;
     }
 
     void GeneratePalette()
@@ -87,7 +114,7 @@ public class UIController : MonoBehaviour
                     WriteError("Error: couldn't load image");
                     return;
                 }
-                palette = ditherer.InitPalette(img, colorCount.value, iterationCount.value);
+                palette = ditherer.InitPalette(img, colorCount.value, iterationCount.value, seed.value);
                 WriteError("generated palette for " + loadPath.value);
                 Destroy(img);
             }
@@ -106,7 +133,7 @@ public class UIController : MonoBehaviour
                     WriteError("Error: couldn't load image");
                     return;
                 }
-                palette = ditherer.InitPalette(img, colorCount.value, iterationCount.value);
+                palette = ditherer.InitPalette(img, colorCount.value, iterationCount.value, seed.value);
                 WriteError("generated palette for " + imgPath);
                 Destroy(img);
             }
@@ -158,13 +185,18 @@ public class UIController : MonoBehaviour
             WriteError("Error: save folder not found");
         }
 
-        if (!IsPowerOfTwo(matrixSize.value))
+        if (outputScale.value < 0)
+        {
+            WriteError("Output Scale must be greater than 0");
+        }
+
+        if (!IsPowerOfTwo(getMatrixSize()))
         {
             WriteError("matrixSize is not a power of two");
             yield break;
 
         }
-        ditherer.InitThresholdMatrix(matrixSize.value);
+        ditherer.InitThresholdMatrix(getMatrixSize());
         ditherer.InitBuffers();
 
         if (File.Exists(loadPath.value))
@@ -203,7 +235,7 @@ public class UIController : MonoBehaviour
         return v != 0 && ((v & (v - 1)) == 0);
     }
 
-    void Dither(string imgPath)
+    void Dither(string imgPath, string suffix = "_dithered")
     {
         Texture2D img = LoadPNG(imgPath);
         if (img == null)
@@ -217,14 +249,17 @@ public class UIController : MonoBehaviour
             return;
         }
         WriteError("currently dithering " + Path.GetFileName(imgPath));
-        RenderTexture result = ditherer.Dither(img);
 
-        savePNG(savePath.value, Path.GetFileName(imgPath), result);
+        RenderTexture result = ditherer.Dither(img, outputScale.value / 100f);
+
+        if (outputScale.value != 100) suffix += $"_{outputScale.value}";
+
+        savePNG(savePath.value, Path.GetFileName(imgPath).Split(".")[0], result, suffix);
         result.Release();
         Destroy(img);
     }
 
-    void savePNG(string path, string name, RenderTexture rt)
+    void savePNG(string path, string name, RenderTexture rt, string suffix = "")
     {
         // Create a new texture of the same size as the render texture
         Texture2D texture2D = new Texture2D(rt.width, rt.height, TextureFormat.RGB24, false);
@@ -241,7 +276,7 @@ public class UIController : MonoBehaviour
         byte[] bytes = texture2D.EncodeToPNG();
 
         // Define the file path
-        string filePath = path + "/" + name;
+        string filePath = path + "/" + name + suffix + ".png";
 
         // Write the PNG byte array to a file
         File.WriteAllBytes(filePath, bytes);
