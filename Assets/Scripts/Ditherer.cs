@@ -21,12 +21,58 @@ public class Ditherer : MonoBehaviour
     float[,] thresholdMatrix;
     public List<Color> palette;
 
+    Vector3 RGB2OKLab(Color color)
+    {
+        Color c = color.linear;
+
+        float l = 0.4122214708f * c.r
+                + 0.5363325363f * c.g
+                + 0.0514459929f * c.b;
+
+        float m = 0.2119034982f * c.r
+                + 0.6806995451f * c.g
+                + 0.1073969566f * c.b;
+
+        float s = 0.0883024619f * c.r
+                + 0.2817188376f * c.g
+                + 0.6299787005f * c.b;
+
+        float l_ = Mathf.Pow(l, 1f / 3f);
+        float m_ = Mathf.Pow(m, 1f / 3f);
+        float s_ = Mathf.Pow(s, 1f / 3f);
+
+        return new Vector3(
+            0.2104542553f * l_ + 0.7936177850f * m_ - 0.0040720468f * s_,
+            1.9779984951f * l_ - 2.4285922051f * m_ + 0.4505937099f * s_,
+            0.0259040371f * l_ + 0.7827717662f * m_ - 0.8086757660f * s_
+        );
+    }
+
+    Color OKLab2RGB(Vector3 lab)
+    {
+        float l_ = lab.x + 0.3963377774f * lab.y + 0.2158037573f * lab.z;
+        float m_ = lab.x - 0.1055613458f * lab.y - 0.0638541728f * lab.z;
+        float s_ = lab.x - 0.0894841775f * lab.y - 1.2914855480f * lab.z;
+
+        float l = l_ * l_ * l_;
+        float m = m_ * m_ * m_;
+        float s = s_ * s_ * s_;
+
+        Color linear = new Color(
+             4.0767416621f * l - 3.3077115913f * m + 0.2309699292f * s,
+            -1.2684380046f * l + 2.6097574011f * m - 0.3413193965f * s,
+            -0.0041960863f * l - 0.7034186147f * m + 1.7076147010f * s
+        );
+
+        return linear.gamma;
+    }
+
     struct ImageColor
     {
-        public Color color;
+        public Vector4 color;
         public int frequency;
 
-        public ImageColor(Color color, int frequency)
+        public ImageColor(Vector4 color, int frequency)
         {
             this.color = color;
             this.frequency = frequency;
@@ -59,7 +105,9 @@ public class Ditherer : MonoBehaviour
         List<ImageColor> allColors = new List<ImageColor>();
         foreach (KeyValuePair<Color, int> entry in colorFrequencies)
         {
-            allColors.Add(new ImageColor(entry.Key, entry.Value));
+            Vector4 c = entry.Key;
+            // Vector4 c = RGB2OKLab(entry.Key);
+            allColors.Add(new ImageColor(c, entry.Value));
         }
 
         List<Color> tmpPaletteColors = GenerateKMeansPalette(allColors, colorCount, iterationCount, seed);
@@ -68,7 +116,8 @@ public class Ditherer : MonoBehaviour
         {
             if (!paletteColors.Contains(tmpPaletteColors[i]))
             {
-                paletteColors.Add(tmpPaletteColors[i]);
+                // paletteColors.Add(OKLab2RGB(tmpPaletteColors[i]));
+                paletteColors.Add((tmpPaletteColors[i]));
             }
         }
         print(paletteColors.Count);
@@ -76,37 +125,6 @@ public class Ditherer : MonoBehaviour
         palette = paletteColors;
         return palette;
     }
-
-    /*
-        List<Color> MedianCutColors(List<Color> colors, int n)
-        {
-            if (n == 0)
-            {
-                Color[] col = { GetAvgColor(colors) };
-                return col.ToList();
-            }
-            (float, float)[] ranges = { (1f, 0f), (1f, 0f), (1f, 0f), (1f, 0f) };
-            foreach (Color c in colors)
-            {
-                for (int i = 0; i < 4; i++)
-                {
-                    float v = c[i];
-                    ranges[i] = (Mathf.Min(ranges[i].Item1, v), Mathf.Max(ranges[i].Item2, v));
-                }
-            }
-            float[] totalRanges = { ranges[0].Item2 - ranges[0].Item1, ranges[1].Item2 - ranges[1].Item1, ranges[2].Item2 - ranges[2].Item1, ranges[3].Item2 - ranges[3].Item1 };
-            int dimIndex = totalRanges.ToList().IndexOf(totalRanges.Max());
-
-            List<Color> sortedColors = new List<Color>(colors);
-            sortedColors.Sort((c1, c2) => c1[dimIndex].CompareTo(c2[dimIndex]));
-
-            int midpoint = sortedColors.Count / 2;
-            List<Color> colors1 = sortedColors.Take(midpoint).ToList();
-            List<Color> colors2 = sortedColors.Skip(midpoint).ToList();
-
-            return MedianCutColors(colors1, n - 1).Concat(MedianCutColors(colors2, n - 1)).ToList();
-        }
-    */
 
     List<Color> GenerateKMeansPalette(List<ImageColor> colors, int k, int iterationCount, int seed)
     {
@@ -156,6 +174,8 @@ public class Ditherer : MonoBehaviour
             palette.Add(new Color(means[i].x, means[i].y, means[i].z));
         }
 
+        palette.Sort((a, b) => (int)Mathf.Sign(a.grayscale - b.grayscale));
+
         return palette;
     }
 
@@ -177,7 +197,7 @@ public class Ditherer : MonoBehaviour
 
     Color GetAvgColor(List<ImageColor> colors)
     {
-        Color avg = new Color(0, 0, 0, 0);
+        Vector4 avg = new Vector4(0, 0, 0, 0);
         int tot = 0;
         foreach (ImageColor c in colors)
         {
@@ -350,6 +370,7 @@ public class Ditherer : MonoBehaviour
         result.enableRandomWrite = true;
         result.Create();
         shader.SetTexture(0, "result", result);
+        image.wrapMode = TextureWrapMode.Clamp;
         RenderTexture.active = result;
         Graphics.Blit(image, result);
 

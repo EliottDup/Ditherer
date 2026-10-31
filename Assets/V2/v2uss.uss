@@ -1,0 +1,34 @@
+:root {
+}
+
+.title {
+    -unity-text-align: upper-center;
+    font-size: 30px;
+    -unity-font-style: normal;
+}
+
+.input {
+    font-size: 20px;
+    align-items: center;
+    align-self: center;
+    width: 90%;
+    -unity-text-align: middle-center;
+}
+
+#unity-tab-view__content-container {
+    flex-grow: 1;
+}
+
+#unity-tab__content-container {
+    flex-grow: 1;
+}
+
+#unity-content-container {
+    height: 100%;
+}
+
+.previewColor {
+    flex-grow: 1;
+    display: flex;
+    visibility: visible;
+}

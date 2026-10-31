@@ -1,0 +1,74 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/V2/v2uss.uss?fileID=7433441132597879392&amp;guid=03b589194d1d39c4c8a73be9e3931e24&amp;type=3#v2uss"/>
+    <ui:VisualElement name="background" style="flex-grow: 1; background-color: rgb(173, 116, 63); visibility: visible; display: flex;">
+        <ui:Label text="DITHERER V2.0!!1" name="Title" class="title"/>
+        <ui:TabView name="mainTabView" enabled="true" style="flex-grow: 1; font-size: 20px;">
+            <ui:Tab label="Single Image" name="singleImageTab" tabindex="1" style="height: auto; max-height: none; flex-grow: 1; flex-basis: auto; overflow: visible;">
+                <ui:ScrollView name="singleImageScrollBody" style="flex-direction: column; height: 100%;">
+                    <ui:VisualElement name="singleImageBody" style="flex-grow: 1; flex-direction: row; width: 100%; height: 100%;">
+                        <ui:VisualElement name="singleImageInputBody" style="flex-grow: 1; width: 66%; height: 100%; align-items: center;">
+                            <ui:Button text="Load Image" name="loadImageButton" class="input"/>
+                            <ui:Label text="Output will be saved to:" name="outputConfirmation" class="input" style="font-size: 15px;"/>
+                            <ui:Button text="Load Palette" name="loadPaletteButton" class="input"/>
+                            <ui:VisualElement name="palettePreview" style="flex-grow: 1; max-height: 40%; height: auto; min-height: 20%;"/>
+                            <ui:IntegerField label="Matrix Size" value="8" name="matrixSizeField" class="input"/>
+                            <ui:Button text="Dither!" name="ditherButton" class="input"/>
+                        </ui:VisualElement>
+                        <ui:VisualElement name="singleImageOutputBody" style="flex-grow: 1; width: 33%; align-items: center;">
+                            <ui:Label text="" name="TextOutput" style="height: 25%; font-size: 20px; max-height: 25%; text-overflow: clip; min-height: 20%; white-space: normal; -unity-text-auto-size: best-fit 10px 30px; overflow: hidden;"/>
+                            <ui:Image name="imagePreview" source="project://database/Assets/New%20Render%20Texture.renderTexture?fileID=8400000&amp;guid=483961b25491fdf4c8e541afb77edd98&amp;type=2#New Render Texture" tint-color="rgb(255, 255, 255)" style="aspect-ratio: 1; width: 100%; min-width: auto; max-width: none; height: auto; min-height: auto; max-height: none; flex-grow: 0; align-self: center;"/>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:ScrollView>
+            </ui:Tab>
+            <ui:Tab label="Palette Selection" name="paletteSelectionTab" tabindex="1" style="height: auto; max-height: none; flex-grow: 1; flex-basis: auto; overflow: visible;">
+                <ui:ScrollView name="singleImageScrollBody" style="flex-direction: column; height: 100%;">
+                    <ui:VisualElement name="paletteCreationBody" style="flex-grow: 1; flex-direction: row; width: 100%; height: 100%;">
+                        <ui:VisualElement name="singleImageInputBody" style="flex-grow: 1; width: 66%; height: 100%; align-items: center;">
+                            <ui:DropdownField label="Palette Type" choices="Auto,Manual" index="0" name="paletteType" class="input"/>
+                            <ui:VisualElement name="autoPaletteBody" style="flex-grow: 0; width: 90%; align-items: center;">
+                                <ui:Button text="Load Image" name="loadImageButton" class="input"/>
+                                <ui:IntegerField label="Color Count" value="16" name="colorCount" class="input"/>
+                                <ui:IntegerField label="iteration count" value="16" name="iterationCount" class="input"/>
+                                <ui:Slider label="Jitter" value="0.2" high-value="1" fill="true" show-input-field="true" tooltip="How much the chosen colors will &quot;Jitter&quot; on iterations, a value no higher than 0.2 is recommended" name="jitterValue" class="input"/>
+                                <ui:IntegerField label="Seed" value="42" name="seed" class="input"/>
+                            </ui:VisualElement>
+                            <ui:VisualElement name="manualPaletteBody" style="flex-grow: 0; width: 90%; align-items: center; display: none;">
+                                <ui:Label text="WIP LOL" class="input"/>
+                            </ui:VisualElement>
+                            <ui:VisualElement name="palettePreview" style="flex-grow: 1; max-height: 20%; height: auto; min-height: 10%; width: 90%; flex-direction: row;"/>
+                            <ui:Toggle label="Show Color Space" name="toggleColorSpace" class="input"/>
+                            <ui:VisualElement name="colorSpaceSettingsBody" style="flex-grow: 0; width: 90%; align-self: center; align-items: center; display: none;">
+                                <ui:Toggle label="Show Palette Colors" name="togglePaletteColors" class="input"/>
+                            </ui:VisualElement>
+                            <ui:Button text="Create Palette" name="createPaletteButton" class="input"/>
+                        </ui:VisualElement>
+                        <ui:VisualElement name="paletteOutputBody" style="flex-grow: 1; width: 33%; align-items: center;">
+                            <ui:Label name="textOutput" style="height: 25%; font-size: 20px; max-height: 25%; text-overflow: clip; min-height: 20%; white-space: normal; -unity-text-auto-size: best-fit 10px 30px; overflow: hidden;"/>
+                            <ui:Image name="imagePreview" style="aspect-ratio: 1; width: 100%; min-width: auto; max-width: none; height: auto; min-height: auto; max-height: none; flex-grow: 0; align-self: center;"/>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:ScrollView>
+            </ui:Tab>
+            <ui:Tab label="Batch Image" name="batchImageTab" tabindex="1" icon-image="" style="height: auto; max-height: none; flex-grow: 1; flex-basis: auto; overflow: visible;">
+                <ui:ScrollView name="batchImageScrollBody" style="flex-direction: column; height: 100%;">
+                    <ui:VisualElement name="batchImageBody" style="flex-grow: 1; flex-direction: row; width: 100%; height: 100%;">
+                        <ui:VisualElement name="batchImageInputBody" style="flex-grow: 1; width: 66%; height: 100%; align-items: center;">
+                            <ui:Button text="Select Images" name="loadImageButton" class="input"/>
+                            <ui:Button text="Select Output Dir" name="loadImageButton" class="input"/>
+                            <ui:Label text="Output will be saved to:" name="outputConfirmation" class="input" style="font-size: 15px;"/>
+                            <ui:Button text="Load Palette" name="loadPaletteButton" class="input"/>
+                            <ui:VisualElement name="palettePreview" style="flex-grow: 1; max-height: 40%; height: auto; min-height: 20%;"/>
+                            <ui:IntegerField label="Matrix Size" value="8" name="matrixSizeField" class="input"/>
+                            <ui:Button text="Dither!" name="ditherButton" class="input"/>
+                        </ui:VisualElement>
+                        <ui:VisualElement name="batchImageOutputBody" style="flex-grow: 1; width: 33%; align-items: center;">
+                            <ui:Label text="" name="TextOutput" style="height: 25%; font-size: 20px; max-height: 25%; text-overflow: clip; min-height: 20%; white-space: normal; -unity-text-auto-size: best-fit 10px 30px; overflow: hidden;"/>
+                            <ui:Image name="imagePreview" style="aspect-ratio: 1; width: 100%; min-width: auto; max-width: none; height: auto; min-height: auto; max-height: none; flex-grow: 0; align-self: center;"/>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:ScrollView>
+            </ui:Tab>
+        </ui:TabView>
+    </ui:VisualElement>
+</ui:UXML>
