@@ -70,13 +70,10 @@ public class PaletteSelectionUIController : MonoBehaviour
         _renderTexture.Create();
 
         camera.targetTexture = _renderTexture;
-
-        print("done");
     }
 
     private void UpdateImagePreview()
     {
-        print("updating!");
         if (!_toggleColorSpace.value)
         {
             _imagePreview.image = _imageTexture;
@@ -91,7 +88,6 @@ public class PaletteSelectionUIController : MonoBehaviour
 
     private void OnLoadImage()
     {
-        print("selecting Image");
         try
         {
             string[] paths = StandaloneFileBrowser.OpenFilePanel("Select an image", "", new ExtensionFilter[] { new("Image Files", "png", "jpg") }, false);
@@ -128,6 +124,15 @@ public class PaletteSelectionUIController : MonoBehaviour
         {
             pointDrawer.SetPoints(_kMeansGenerator.GetPoints(), _colorspace);
         }
+    }
+
+    public List<Color> getPalette()
+    {
+        if (_palette == null || _palette.Count < 2)
+        {
+            return new List<Color>() { Color.black, Color.white };
+        }
+        return _palette;
     }
 
     private void OnGenerate()
